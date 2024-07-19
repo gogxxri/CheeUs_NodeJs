@@ -6,7 +6,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = 8080;
+const port = 8888;
 const uri = process.env.MONGODB_URI; // 환경변수에서 MongoDB URI 가져오기
 const dbName = process.env.DB_NAME; 
 
