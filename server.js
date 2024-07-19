@@ -6,9 +6,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = 8888;
-const uri = process.env.MONGODB_URI; // 환경변수에서 MongoDB URI 가져오기
-const dbName = process.env.DB_NAME; 
+const port = 8889;
+const uri = process.env.MONGODB_URI;
+const dbName = process.env.DB_NAME;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 let db;
@@ -25,9 +25,10 @@ async function connectMongoDB() {
         db = client.db(dbName);
     } catch (error) {
         console.error('>>>> Failed to connect to MongoDB', error);
-        process.exit(1); // MongoDB 연결 실패 시 서버 종료
+        process.exit(1);
     }
 }
+
 app.get('/api/messages/:roomId', async (req, res) => {
     const roomId = parseInt(req.params.roomId, 10); 
     try {
@@ -39,7 +40,6 @@ app.get('/api/messages/:roomId', async (req, res) => {
     }
 });
 
-// 채팅방 목록과 메시지 조인해서 가져오기
 app.get('/api/chatRooms', async (req, res) => {
     try {
         const pipeline = [
@@ -81,12 +81,11 @@ app.get('/api/chatRooms', async (req, res) => {
     }
 });
 
-// 메시지 전송하기
 app.post('/api/messages', async (req, res) => {
     const newMessage = req.body;
     try {
         const result = await db.collection('ChatMessages').insertOne(newMessage);
-        console.log('Message sent:', result.insertedId);
+        console.log('>>>>Message sent:', result.insertedId);
         res.status(201).json({ message: '>>>>Message sent successfully' });
     } catch (error) {
         console.error('>>>>Error sending message:', error);
@@ -94,7 +93,6 @@ app.post('/api/messages', async (req, res) => {
     }
 });
 
-// 서버 시작 및 MongoDB 연결
 async function startServer() {
     try {
         await connectMongoDB();
@@ -107,4 +105,6 @@ async function startServer() {
     }
 }
 
-startServer();
+startServer()
+
+module.exports = app; // Express 앱을 모듈로 내보냅니다.

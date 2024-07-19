@@ -1,20 +1,19 @@
-const {createServer} = require("http");
-const app = require("./server");
-const {Server} = require("socket.io"); // 웹 소켓
-
+const { createServer } = require('http');
+const expressApp = require('./server'); // Express 앱 가져오기
+const { Server } = require('socket.io');
 require('dotenv').config();
 
-const httpServer = createServer(app);// app에 있는 DB 연결 부분을 올린다.
+const httpServer = createServer(expressApp); // Express 서버를 HTTP 서버로 래핑
 
-const io = new Server(httpServer,{ // 웹 소켓 서버 생성
-    cors:{ // 웹 소켓도 app.js 처럼 cors 설정을 해줘야 한다. 허락한 대상만 통신할 수 있도록  
-        origin: "http://localhost:3000" // 프론트엔드 주소
-    },
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST"]
+    }
 });
 
-require("./utils/io")(io); //io 매개변수를 io.js에서 가져옴
+require('./utils/io')(io); // 소켓 설정 파일에 io 객체를 전달
 
-httpServer.listen(process.env.SERVER_PORT, ()=>{ // 앱 서버
-    console.log(">>>>소켓 Server listening on port:", process.env.SERVER_PORT)
+httpServer.listen(process.env.SERVER_PORT || 8888, () => {
+    console.log(`>>>> Server is running on http://localhost:${process.env.SERVER_PORT || 8888} <<<<`);
 });
-
