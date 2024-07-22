@@ -29,10 +29,11 @@ async function connectMongoDB() {
     }
 }
 
+// 1:1 채팅 메시지 조회 API
 app.get('/api/messages/:roomId', async (req, res) => {
     const roomId = parseInt(req.params.roomId, 10); 
     try {
-        const messages = await db.collection('ChatMessages').find({ chat_room_id: roomId }).toArray();
+        const messages = await db.collection('oneone_chat_messages').find({ chat_room_id: roomId }).toArray();
         res.json(messages);
     } catch (error) {
         console.error('Error fetching messages:', error);
@@ -40,12 +41,13 @@ app.get('/api/messages/:roomId', async (req, res) => {
     }
 });
 
+// 1:1 채팅방 조회 API
 app.get('/api/chatRooms', async (req, res) => {
     try {
         const pipeline = [
             {
                 $lookup: {
-                    from: 'ChatMessages',
+                    from: 'oneone_chat_messages',
                     localField: 'id',
                     foreignField: 'chat_room_id',
                     as: 'messages'
@@ -73,18 +75,87 @@ app.get('/api/chatRooms', async (req, res) => {
             }
         ];
 
-        const chatRooms = await db.collection('ChatRooms').aggregate(pipeline).toArray();
-        res.json(chatRooms);
+        const oneChatRooms = await db.collection('oneone_chat_rooms').aggregate(pipeline).toArray();
+        res.json(oneChatRooms);
     } catch (error) {
         console.error('>>>>Error fetching chat rooms:', error);
         res.status(500).json({ error: '>>>>Failed to fetch chat rooms' });
     }
 });
 
+// 1:1 채팅 메시지 생성 API
 app.post('/api/messages', async (req, res) => {
     const newMessage = req.body;
     try {
-        const result = await db.collection('ChatMessages').insertOne(newMessage);
+        const result = await db.collection('oneone_chat_messages').insertOne(newMessage);
+        console.log('>>>>Message sent:', result.insertedId);
+        res.status(201).json({ message: '>>>>Message sent successfully' });
+    } catch (error) {
+        console.error('>>>>Error sending message:', error);
+        res.status(500).json({ error: '>>>>Failed to send message' });
+    }
+});
+
+
+// 단체 채팅 메시지 조회 API
+app.get('/api/togetherMessages/:roomId', async (req, res) => {
+    const roomId = parseInt(req.params.roomId, 10);
+    try {
+        const messages = await db.collection('together_chat_messages').find({ room_id: roomId }).toArray();
+        res.json(messages);
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+});
+
+// 단체 채팅방 조회 API
+app.get('/api/togetherChatRooms', async (req, res) => {
+    try {
+        const pipeline = [
+            {
+                $lookup: {
+                    from: 'together_chat_messages',
+                    localField: 'id',
+                    foreignField: 'room_id',
+                    as: 'messages'
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    roomId: '$id',
+                    togetherId: '$together_id', 
+                    members: 1,
+                    messages: {
+                        $map: {
+                            input: '$messages',
+                            as: 'message',
+                            in: {
+                                senderId: '$$message.sender_id',
+                                message: '$$message.message',
+                                writeDay: '$$message.write_day',
+                                read: '$$message.read'
+                            }
+                        }
+                    }
+                }
+            }
+        ];
+
+        const togetherChatRooms = await db.collection('together_chat_rooms').aggregate(pipeline).toArray();
+        res.json(togetherChatRooms);
+    } catch (error) {
+        console.error('Error fetching chat rooms:', error);
+        res.status(500).json({ error: 'Failed to fetch chat rooms' });
+    }
+});
+
+// 단체 채팅 메시지 생성 API
+app.post('/api/togetherMessages', async (req, res) => {
+    const newMessage = req.body;
+    try {
+        const result = await db.collection('together_chat_messages').insertOne(newMessage);
         console.log('>>>>Message sent:', result.insertedId);
         res.status(201).json({ message: '>>>>Message sent successfully' });
     } catch (error) {
@@ -105,6 +176,6 @@ async function startServer() {
     }
 }
 
-startServer()
+startServer();
 
-module.exports = app; // Express 앱을 모듈로 내보냅니다.
+module.exports = app; 
