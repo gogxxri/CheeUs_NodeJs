@@ -96,7 +96,6 @@ app.post('/api/messages', async (req, res) => {
     }
 });
 
-
 // 단체 채팅 메시지 조회 API
 app.get('/api/togetherMessages/:roomId', async (req, res) => {
     const roomId = parseInt(req.params.roomId, 10);
