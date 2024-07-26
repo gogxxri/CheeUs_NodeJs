@@ -163,6 +163,45 @@ app.post('/api/togetherMessages', async (req, res) => {
     }
 });
 
+// 1:1 메시지 읽음 상태 업데이트
+app.put('/api/messages/:roomId/read', async (req, res) => {
+    const { roomId } = req.params;
+    try {
+        const result = await db.collection('oneone_chat_messages').updateMany(
+            { chat_room_id: parseInt(roomId, 10) },
+            { $set: { read: 1 } }
+        );
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: '메시지를 찾을 수 없습니다' });
+        }
+        res.status(200).json({ message: '메시지 읽음 상태가 업데이트되었습니다' });
+    } catch (error) {
+        console.error('메시지 읽음 상태 업데이트 오류:', error);
+        res.status(500).json({ error: '메시지 읽음 상태 업데이트 실패' });
+    }
+});
+
+// 단체1:1 메시지 읽음 상태 업데이트
+app.put('/api/togetherMessages/:roomId/read', async (req, res) => {
+    const { roomId } = req.params;
+    if (!roomId) {
+        return res.status(400).json({ error: 'roomId가 필요합니다' });
+    }
+    try {
+        const result = await db.collection('together_chat_messages').updateMany(
+            { room_id: parseInt(roomId, 10) },
+            { $set: { read: 1 } }
+        );
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: '메시지를 찾을 수 없습니다' });
+        }
+        res.status(200).json({ message: '메시지 읽음 상태가 업데이트되었습니다' });
+    } catch (error) {
+        console.error('단체 채팅 메시지 읽음 상태 업데이트 오류:', error);
+        res.status(500).json({ error: '단체 채팅 메시지 읽음 상태 업데이트 실패' });
+    }
+});
+
 async function startServer() {
     try {
         await connectMongoDB();
